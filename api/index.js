@@ -1,9 +1,6 @@
 const { addonBuilder } = require("stremio-addon-sdk");
 require("dotenv").config();
 const { channels } = require("../src/channels");
-const NodeCache = require("node-cache");
-
-const myCache = new NodeCache({ stdTTL: 600 });
 
 const manifest = {
     id: "org.cricket.live",
@@ -91,20 +88,30 @@ builder.defineStreamHandler(async ({ type, id }) => {
 const addonInterface = builder.getInterface();
 
 module.exports = async (req, res) => {
-    const handler = addonInterface[req.method.toLowerCase()];
+    const pathname = new URL(req.url, `http://${req.headers.host}`).pathname;
     
+    // Set CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'application/json');
+
+    // Handle root path - return manifest
+    if (pathname === '/' || pathname === '/manifest.json') {
+        return res.status(200).send(JSON.stringify(manifest));
+    }
+
     try {
-        const url = new URL(req.url, `http://${req.headers.host}`);
-        if (handler) {
-            const result = await handler(url);
-            res.setHeader('Access-Control-Allow-Origin', '*');
-            res.setHeader('Content-Type', 'application/json');
-            res.status(200).send(JSON.stringify(result));
-        } else {
-            res.status(404).send({ error: 'not found' });
+        // Remove leading slash and split path
+        const parts = pathname.slice(1).split('/');
+        const resource = parts[0];
+        
+        if (!addonInterface[resource]) {
+            return res.status(404).send({ error: 'Resource not found' });
         }
+
+        const result = await addonInterface[resource](req.url);
+        return res.status(200).send(JSON.stringify(result));
     } catch (error) {
         console.error(error);
-        res.status(500).send({ error: error.message });
+        return res.status(500).send({ error: error.message });
     }
 };
