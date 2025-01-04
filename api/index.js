@@ -1,26 +1,7 @@
 const { addonBuilder } = require("stremio-addon-sdk");
 require("dotenv").config();
 const { channels } = require("../src/channels");
-
-const manifest = {
-    id: "org.cricket.live",
-    version: "1.0.0",
-    name: "Cricket Live Channels",
-    description: "Watch live cricket with streams from various broadcasters.",
-    resources: ["stream", "catalog", "meta"],
-    types: ["channel"],
-    idPrefixes: ["cricket"],
-    logo: "https://example.com/logo.png",
-    catalogs: [
-        {
-            type: "channel",
-            id: "cricket_catalog",
-            name: "Live Cricket Channels",
-            genres: ["Sports", "Cricket"]
-        }
-    ],
-    background: "https://example.com/background.png"
-};
+const manifest = require("../src/manifest");
 
 const builder = new addonBuilder(manifest);
 
