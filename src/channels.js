@@ -2,7 +2,7 @@ const channels = [
     {
         id: "cricket_sky_sports_nz",
         name: "Sky Sports NZ",
-        logo: "https://example.com/sky_sports_nz.png",
+        logo: "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Ftse1.mm.bing.net%2Fth%3Fid%3DOIP.Ws5faGn2EQWeL6n37bCWngHaHa%26pid%3DApi&f=1&ipt=7403fea160f53dc800cc5c0d96e52002417b1fcb43ae4c312c846382f765fb93&ipo=images",
         streamUrl: process.env.SKY_SPORTS_NZ,
     },
     {
