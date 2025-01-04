@@ -7,7 +7,7 @@ const myCache = new NodeCache({ stdTTL: 600 }); // Cache for 10 minutes
 
 const manifest = {
     id: "org.cricket.live",
-    version: "1.0.0",
+    version: "1.0.1",
     name: "Cricket Live Channels",
     description: "Watch live cricket with streams from various broadcasters.",
     resources: ["stream", "catalog", "meta"],

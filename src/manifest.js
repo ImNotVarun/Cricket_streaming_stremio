@@ -1,6 +1,6 @@
 const manifest = {
     id: "org.cricket.live",
-    version: "1.0.0",
+    version: "1.0.1",
     name: "Cricket Live Channels",
     description: "Watch live cricket channels including Sky Sports, Willow Cricket, Fox Cricket, and more.",
     resources: ["stream", "catalog", "meta"],
