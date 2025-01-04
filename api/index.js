@@ -69,30 +69,39 @@ builder.defineStreamHandler(async ({ type, id }) => {
 const addonInterface = builder.getInterface();
 
 module.exports = async (req, res) => {
-    const pathname = new URL(req.url, `http://${req.headers.host}`).pathname;
-    
     // Set CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', '*');
     res.setHeader('Content-Type', 'application/json');
 
-    // Handle root path - return manifest
-    if (pathname === '/' || pathname === '/manifest.json') {
-        return res.status(200).send(JSON.stringify(manifest));
+    // Handle OPTIONS request
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
     }
 
     try {
-        // Remove leading slash and split path
-        const parts = pathname.slice(1).split('/');
-        const resource = parts[0];
-        
-        if (!addonInterface[resource]) {
-            return res.status(404).send({ error: 'Resource not found' });
+        const url = new URL(req.url, `http://${req.headers.host}`);
+        const pathname = url.pathname;
+
+        // Handle root path and manifest
+        if (pathname === '/' || pathname === '/manifest.json') {
+            return res.status(200).json(manifest);
         }
 
-        const result = await addonInterface[resource](req.url);
-        return res.status(200).send(JSON.stringify(result));
+        // Extract the resource type and handle the request
+        const parts = pathname.slice(1).split('/');
+        const resource = parts[0];
+
+        if (!addonInterface[resource]) {
+            console.error(`Resource not found: ${resource}`);
+            return res.status(404).json({ error: 'Resource not found' });
+        }
+
+        const result = await addonInterface[resource](url.href);
+        return res.status(200).json(result);
     } catch (error) {
-        console.error(error);
-        return res.status(500).send({ error: error.message });
+        console.error('Error handling request:', error);
+        return res.status(500).json({ error: error.message });
     }
 };
