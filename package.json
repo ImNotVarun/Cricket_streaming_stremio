@@ -1,18 +1,19 @@
 {
   "name": "stremio-cricket-addon",
   "version": "1.0.0",
-  "description": "Stremio addon for cricket streaming channels",
+  "description": "Stremio addon for cricket streaming",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js"
   },
   "dependencies": {
-    "dotenv": "^16.3.1",
+    "stremio-addon-sdk": "^1.6.10",
+    "@supabase/supabase-js": "^2.39.0",
     "node-cache": "^5.1.2",
-    "stremio-addon-sdk": "^1.6.10"
+    "dotenv": "^16.3.1"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.2"
   }
 }
