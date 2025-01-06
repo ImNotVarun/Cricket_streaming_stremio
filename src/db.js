@@ -1,7 +1,6 @@
 const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 
-// Add error checking for environment variables
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
   throw new Error(
     'Missing environment variables. Please make sure SUPABASE_URL and SUPABASE_ANON_KEY are set in your .env file'
@@ -23,14 +22,26 @@ async function getChannels() {
 }
 
 async function getChannel(id) {
-  const { data, error } = await supabase
+  const { data: channel, error: channelError } = await supabase
     .from('cricket_channels')
     .select('*')
     .eq('id', id)
     .single();
   
-  if (error) throw error;
-  return data;
+  if (channelError) throw channelError;
+
+  // Get additional streams for this channel
+  const { data: additionalStreams, error: streamsError } = await supabase
+    .from('channel_streams')
+    .select('*')
+    .eq('channel_id', id);
+
+  if (streamsError) throw streamsError;
+
+  return {
+    ...channel,
+    additional_streams: additionalStreams || []
+  };
 }
 
 module.exports = {
