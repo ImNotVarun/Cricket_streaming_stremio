@@ -29,7 +29,7 @@ const manifest = {
 
 const builder = new addonBuilder(manifest);
 
-// Catalog handler – returns channel listings
+// Catalog handler
 builder.defineCatalogHandler(async ({ type, id }) => {
   console.log('Catalog requested:', type, id);
 
@@ -41,7 +41,7 @@ builder.defineCatalogHandler(async ({ type, id }) => {
 
     try {
       const channels = await getChannels();
-      console.log("Fetched channels:", channels); // Debug log
+      console.log("Fetched channels:", channels);
 
       const metas = channels.map(channel => ({
         id: `${STREAM_PREFIX}${channel.id}`,
@@ -61,7 +61,7 @@ builder.defineCatalogHandler(async ({ type, id }) => {
   return { metas: [] };
 });
 
-// Meta handler – returns details for a single channel
+// Meta handler
 builder.defineMetaHandler(async ({ type, id }) => {
   console.log('Meta requested:', type, id);
 
@@ -93,7 +93,7 @@ builder.defineMetaHandler(async ({ type, id }) => {
   return { meta: null };
 });
 
-// Stream handler – returns the streams (m3u8 links and website URL)
+// Modified Stream handler to force browser opening
 builder.defineStreamHandler(async ({ type, id }) => {
   console.log('Stream requested:', type, id);
 
@@ -107,42 +107,39 @@ builder.defineStreamHandler(async ({ type, id }) => {
     try {
       const channel = await getChannel(channelId);
 
-      // Create streams array with the main m3u8 stream.
-      const streams = [{
-        title: `${channel.name} - Main Stream`,
-        url: channel.stream_url,
-        behaviorHints: {
-          notWebReady: true,
-          bingeGroup: `cricket_${channel.id}`,
-          proxyHeaders: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-          }
-        }
-      }];
+      const streams = [];
 
-      // Add any additional m3u8 streams.
+      // Main stream as website link
+      if (channel.stream_url) {
+        streams.push({
+          title: `${channel.name} - Open in Browser`,
+          externalUrl: channel.stream_url,  // Using externalUrl instead of url
+          behaviorHints: {
+            notWebReady: true,
+            external: true
+          }
+        });
+      }
+
+      // Additional streams as website links
       if (channel.additional_streams && channel.additional_streams.length > 0) {
         channel.additional_streams.forEach((stream, index) => {
           streams.push({
-            title: `${channel.name} - Stream ${index + 2}`,
-            url: stream.url,
+            title: `${channel.name} - Stream ${index + 2} (Browser)`,
+            externalUrl: stream.url,  // Using externalUrl instead of url
             behaviorHints: {
               notWebReady: true,
-              bingeGroup: `cricket_${channel.id}`,
-              proxyHeaders: {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-              }
+              external: true
             }
           });
         });
       }
 
-      // Add website URL stream if available.
-      // Adding external: true hints that this stream should be opened in an external browser.
+      // Website URL
       if (channel.website_url) {
         streams.push({
           title: `${channel.name} - Website`,
-          url: channel.website_url,
+          externalUrl: channel.website_url,  // Using externalUrl instead of url
           behaviorHints: {
             notWebReady: true,
             external: true
