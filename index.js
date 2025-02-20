@@ -1,3 +1,4 @@
+// index.js
 const { addonBuilder, getRouter } = require('stremio-addon-sdk');
 const NodeCache = require('node-cache');
 const { getChannels, getChannel } = require('./src/db');
@@ -8,7 +9,7 @@ const cache = new NodeCache({ stdTTL: CACHE_TTL });
 
 const manifest = {
   id: 'org.cricketstreams',
-  version: '1.0.1',
+  version: '1.0.3',
   name: 'Cricket Streams',
   description: 'Watch live cricket streams',
   types: ['tv'],
@@ -28,17 +29,20 @@ const manifest = {
 
 const builder = new addonBuilder(manifest);
 
+// Catalog handler – returns channel listings
 builder.defineCatalogHandler(async ({ type, id }) => {
   console.log('Catalog requested:', type, id);
-  
+
   if (type === 'tv' && id === 'cricket') {
     const cacheKey = 'cricket_channels';
     const cached = cache.get(cacheKey);
-    
+
     if (cached) return cached;
 
     try {
       const channels = await getChannels();
+      console.log("Fetched channels:", channels); // Debug log
+
       const metas = channels.map(channel => ({
         id: `${STREAM_PREFIX}${channel.id}`,
         type: 'tv',
@@ -57,14 +61,15 @@ builder.defineCatalogHandler(async ({ type, id }) => {
   return { metas: [] };
 });
 
+// Meta handler – returns details for a single channel
 builder.defineMetaHandler(async ({ type, id }) => {
   console.log('Meta requested:', type, id);
-  
+
   if (type === 'tv' && id.startsWith(STREAM_PREFIX)) {
     const channelId = id.replace(STREAM_PREFIX, '');
     const cacheKey = `meta_${channelId}`;
     const cached = cache.get(cacheKey);
-    
+
     if (cached) return cached;
 
     try {
@@ -88,9 +93,10 @@ builder.defineMetaHandler(async ({ type, id }) => {
   return { meta: null };
 });
 
+// Stream handler – returns the streams (m3u8 links and website URL)
 builder.defineStreamHandler(async ({ type, id }) => {
   console.log('Stream requested:', type, id);
-  
+
   if (type === 'tv' && id.startsWith(STREAM_PREFIX)) {
     const channelId = id.replace(STREAM_PREFIX, '');
     const cacheKey = `stream_${channelId}`;
@@ -100,8 +106,8 @@ builder.defineStreamHandler(async ({ type, id }) => {
 
     try {
       const channel = await getChannel(channelId);
-      
-      // Create streams array starting with the main stream
+
+      // Create streams array with the main m3u8 stream.
       const streams = [{
         title: `${channel.name} - Main Stream`,
         url: channel.stream_url,
@@ -114,7 +120,7 @@ builder.defineStreamHandler(async ({ type, id }) => {
         }
       }];
 
-      // Add additional streams if available
+      // Add any additional m3u8 streams.
       if (channel.additional_streams && channel.additional_streams.length > 0) {
         channel.additional_streams.forEach((stream, index) => {
           streams.push({
@@ -131,6 +137,19 @@ builder.defineStreamHandler(async ({ type, id }) => {
         });
       }
 
+      // Add website URL stream if available.
+      // Adding external: true hints that this stream should be opened in an external browser.
+      if (channel.website_url) {
+        streams.push({
+          title: `${channel.name} - Website`,
+          url: channel.website_url,
+          behaviorHints: {
+            notWebReady: true,
+            external: true
+          }
+        });
+      }
+
       const response = { streams };
       cache.set(cacheKey, response);
       return response;
@@ -142,6 +161,7 @@ builder.defineStreamHandler(async ({ type, id }) => {
   return { streams: [] };
 });
 
+// For development: serve the addon over HTTP
 if (process.env.NODE_ENV !== 'production') {
   const { serveHTTP } = require('stremio-addon-sdk');
   serveHTTP(builder.getInterface(), { port: process.env.PORT || DEFAULT_PORT });

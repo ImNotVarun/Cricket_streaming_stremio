@@ -1,9 +1,10 @@
+// src/db.js
 const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
   throw new Error(
-    'Missing environment variables. Please make sure SUPABASE_URL and SUPABASE_ANON_KEY are set in your .env file'
+    'Missing environment variables. Please ensure SUPABASE_URL and SUPABASE_ANON_KEY are set in your .env file'
   );
 }
 
@@ -16,7 +17,6 @@ async function getChannels() {
   const { data, error } = await supabase
     .from('cricket_channels')
     .select('*');
-  
   if (error) throw error;
   return data;
 }
@@ -27,10 +27,10 @@ async function getChannel(id) {
     .select('*')
     .eq('id', id)
     .single();
-  
+
   if (channelError) throw channelError;
 
-  // Get additional streams for this channel
+  // Fetch additional streams for this channel
   const { data: additionalStreams, error: streamsError } = await supabase
     .from('channel_streams')
     .select('*')
