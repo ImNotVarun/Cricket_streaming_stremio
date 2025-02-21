@@ -11,7 +11,7 @@ const manifest = {
   id: 'org.cricketstreams',
   version: '1.0.3',
   name: 'Cricket Streams',
-  description: 'Watch live cricket streams',
+  description: 'Watch live cricket streams with Acestream support',
   types: ['tv'],
   logo: "https://png.pngtree.com/png-vector/20230410/ourlarge/pngtree-icc-mens-cricket-world-cup-logo-vector-png-image_6698879.png",
   background: "https://data1.ibtimes.co.in/en/full/717924/rohit-sharma.jpg",
@@ -93,7 +93,7 @@ builder.defineMetaHandler(async ({ type, id }) => {
   return { meta: null };
 });
 
-// Modified Stream handler to force browser opening
+// Stream handler with Acestream support
 builder.defineStreamHandler(async ({ type, id }) => {
   console.log('Stream requested:', type, id);
 
@@ -106,14 +106,13 @@ builder.defineStreamHandler(async ({ type, id }) => {
 
     try {
       const channel = await getChannel(channelId);
-
       const streams = [];
 
-      // Main stream as website link
-      if (channel.stream_url) {
+      // 1. Acestream (if available)
+      if (channel.acestream_id) {
         streams.push({
-          title: `${channel.name} - Open in Browser`,
-          externalUrl: channel.stream_url,  // Using externalUrl instead of url
+          title: `Acestream`,
+          externalUrl: `acestream://${channel.acestream_id}`,
           behaviorHints: {
             notWebReady: true,
             external: true
@@ -121,25 +120,68 @@ builder.defineStreamHandler(async ({ type, id }) => {
         });
       }
 
-      // Additional streams as website links
-      if (channel.additional_streams && channel.additional_streams.length > 0) {
-        channel.additional_streams.forEach((stream, index) => {
-          streams.push({
-            title: `${channel.name} - Stream ${index + 2} (Browser)`,
-            externalUrl: stream.url,  // Using externalUrl instead of url
-            behaviorHints: {
-              notWebReady: true,
-              external: true
-            }
-          });
+      // 2. m3u8 stream for in-app playback (if available)
+      if (channel.m3u8_url) {
+        streams.push({
+          title: `Internal Player`,
+          url: channel.m3u8_url,
+          behaviorHints: {
+            notWebReady: false
+          }
         });
       }
 
-      // Website URL
+      // 3. Main website stream (opens in browser)
+      if (channel.stream_url) {
+        streams.push({
+          title: `Browser`,
+          externalUrl: channel.stream_url,
+          behaviorHints: {
+            notWebReady: true,
+            external: true
+          }
+        });
+      }
+
+      // 4. Additional streams (acestream, m3u8, or website)
+      if (channel.additional_streams && channel.additional_streams.length > 0) {
+        channel.additional_streams.forEach((stream, index) => {
+          if (stream.acestream_id) {
+            streams.push({
+              title: `Stream ${index + 2} (Acestream)`,
+              externalUrl: `acestream://${stream.acestream_id}`,
+              behaviorHints: {
+                notWebReady: true,
+                external: true
+              }
+            });
+          }
+          if (stream.m3u8_url) {
+            streams.push({
+              title: `Stream ${index + 2} Internal Player`,
+              url: stream.m3u8_url,
+              behaviorHints: {
+                notWebReady: false
+              }
+            });
+          } else if (stream.url) {
+            streams.push({
+              title: `Stream ${index + 2} (Browser)`,
+              externalUrl: stream.url,
+              behaviorHints: {
+                notWebReady: true,
+                external: true
+              }
+            });
+          }
+        });
+      }
+
+      // 5. Website URL (if provided as a separate field)
       if (channel.website_url) {
         streams.push({
           title: `${channel.name} - Website`,
-          externalUrl: channel.website_url,  // Using externalUrl instead of url
+          externalUrl: channel.website_url,
           behaviorHints: {
             notWebReady: true,
             external: true

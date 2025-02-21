@@ -27,7 +27,6 @@ async function getChannel(id) {
     .select('*')
     .eq('id', id)
     .single();
-
   if (channelError) throw channelError;
 
   // Fetch additional streams for this channel
@@ -35,7 +34,6 @@ async function getChannel(id) {
     .from('channel_streams')
     .select('*')
     .eq('channel_id', id);
-
   if (streamsError) throw streamsError;
 
   return {
