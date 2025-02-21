@@ -9,7 +9,7 @@ const cache = new NodeCache({ stdTTL: CACHE_TTL });
 
 const manifest = {
   id: 'org.cricketstreams',
-  version: '1.0.3',
+  version: '1.0.4',
   name: 'Cricket Streams',
   description: 'Watch live cricket streams with Acestream support',
   types: ['tv'],
